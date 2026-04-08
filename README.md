@@ -1,5 +1,7 @@
 # DocUnlock
 
+![DocUnlock Logo](static/img/logo.png)
+
 Remove password protection from PDFs. Built with FastAPI + vanilla JS.
 
 ## Installation on Linux & Mac

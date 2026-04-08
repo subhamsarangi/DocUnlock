@@ -1,5 +1,7 @@
 # DocUnlock Deployment to OCI Server
 
+![DocUnlock Logo](static/img/logo.png)
+
 This document contains instructions for deploying DocUnlock to a server.
 
 ## Initial Setup
