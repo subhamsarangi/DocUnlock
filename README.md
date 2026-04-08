@@ -1,6 +1,6 @@
 # DocUnlock
 
-![DocUnlock Logo](static/img/logo.png)
+<img src="static/img/logo.png" alt="DocUnlock Logo" width="200">
 
 Remove password protection from PDFs. Built with FastAPI + vanilla JS.
 
