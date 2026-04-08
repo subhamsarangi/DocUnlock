@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}DocUnlock — Remove PDF Password{% endblock %}
+
+{% block content %}
+<div class="page-upload">
+
+  {% if queue_full %}
+  <div class="alert-banner alert-banner--busy">
+    <span class="alert-icon">⚠️</span>
+    <div>
+      <strong>Server is busy right now.</strong>
+      The processing queue is full ({{ max_queue }} jobs). Please wait a moment and try again.
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="hero">
+    <h1 class="hero-title">Remove PDF<br><em>Password</em></h1>
+    <p class="hero-sub">Drop your locked PDF, enter the password, and we'll strip the protection. Free. Private. Fast.</p>
+  </div>
+
+  <div class="card upload-card {% if queue_full %}upload-card--disabled{% endif %}">
+
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-zone__inner">
+        <div class="drop-icon">📄</div>
+        <p class="drop-label">Drag &amp; drop your PDF here</p>
+        <p class="drop-sub">or <button type="button" class="btn-link" id="browseBtn">browse file</button></p>
+        <p class="drop-hint">PDF files only · Max 50 MB</p>
+      </div>
+      <div class="drop-zone__preview d-none" id="filePreview">
+        <div class="file-chip">
+          <span class="file-chip__icon">📄</span>
+          <span class="file-chip__name" id="fileName"></span>
+          <button type="button" class="file-chip__remove" id="removeFile" title="Remove">✕</button>
+        </div>
+      </div>
+      <input type="file" id="fileInput" accept="application/pdf" class="d-none">
+    </div>
+
+    <div class="notice-bar">
+      <span class="notice-icon">🕐</span>
+      <span>Both the original and unlocked files will be <strong>permanently deleted from our server within 15 minutes</strong>.</span>
+    </div>
+
+    <div class="form-section">
+      <label class="form-label-custom" for="passwordInput">PDF Password</label>
+      <input type="password" id="passwordInput" class="input-custom" maxlength="128" placeholder="Enter the document password" autocomplete="off">
+      <button type="button" class="btn-toggle-pass" id="togglePass" title="Show/hide password">👁</button>
+    </div>
+
+    <button type="button" class="btn-submit" id="submitBtn" disabled>
+      <span class="btn-submit__text">Unlock PDF</span>
+      <span class="btn-submit__spinner d-none"></span>
+    </button>
+
+    <div class="error-msg d-none" id="errorMsg"></div>
+  </div>
+
+  <div class="features-row">
+    <div class="feature-item">
+      <span class="feature-icon">🔒</span>
+      <span>End-to-end processed on server, not in browser</span>
+    </div>
+    <div class="feature-item">
+      <span class="feature-icon">🗑️</span>
+      <span>Auto-deleted in 15 min</span>
+    </div>
+    <div class="feature-item">
+      <span class="feature-icon">⚡</span>
+      <span>Queued processing — fair for all</span>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/upload.js"></script>
+{% endblock %}

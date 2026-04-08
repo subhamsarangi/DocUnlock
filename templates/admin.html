@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Admin — DocUnlock{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+  <h1 class="admin-title">Job Admin</h1>
+  <div class="admin-stats">
+    <span>Total Jobs: <strong id="totalJobs">0</strong></span>
+    <span>Queued: <strong id="queuedJobs">0</strong></span>
+    <span>Processing: <strong id="processingJobs">0</strong></span>
+    <span>Done: <strong id="doneJobs">0</strong></span>
+    <span>Error: <strong id="errorJobs">0</strong></span>
+  </div>
+  <div class="admin-loader" id="adminLoader">
+    <div class="spinner-ring"></div>
+    <span>Loading jobs…</span>
+  </div>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Job ID</th>
+        <th>Status</th>
+        <th>Created At</th>
+        <th>Filename</th>
+        <th>Deleted</th>
+      </tr>
+    </thead>
+    <tbody id="jobsTable">
+    </tbody>
+  </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  const jobsTable = document.getElementById('jobsTable');
+  const stats = {
+    total: document.getElementById('totalJobs'),
+    queued: document.getElementById('queuedJobs'),
+    processing: document.getElementById('processingJobs'),
+    done: document.getElementById('doneJobs'),
+    error: document.getElementById('errorJobs'),
+  };
+  const loader = document.getElementById('adminLoader');
+  let previousJobs = {};
+
+  function formatTime(timestamp) {
+    if (!timestamp) return '';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleString();
+  }
+
+  function getStatusClass(status) {
+    switch (status) {
+      case 'queued': return 'status-queued';
+      case 'processing': return 'status-processing';
+      case 'done': return 'status-done';
+      case 'error': return 'status-error';
+      default: return '';
+    }
+  }
+
+  function updateJobs(jobs) {
+    const counts = { queued: 0, processing: 0, done: 0, error: 0 };
+    jobs.forEach(job => counts[job.status] = (counts[job.status] || 0) + 1);
+
+    stats.total.textContent = jobs.length;
+    stats.queued.textContent = counts.queued;
+    stats.processing.textContent = counts.processing;
+    stats.done.textContent = counts.done;
+    stats.error.textContent = counts.error;
+
+    const newJobs = {};
+    jobs.forEach(job => newJobs[job.id] = job);
+
+    // Update table
+    jobsTable.innerHTML = jobs.map(job => {
+      const prevStatus = previousJobs[job.id]?.status;
+      const flash = prevStatus && prevStatus !== job.status ? ' flash' : '';
+      return `
+        <tr class="job-row${flash}" data-id="${job.id}">
+          <td>${job.id}</td>
+          <td><span class="status-badge ${getStatusClass(job.status)}">${job.status}</span></td>
+          <td>${formatTime(job.created_at)}</td>
+          <td>${job.filename || ''}</td>
+          <td><span class="deleted-badge ${job.deleted ? 'deleted-yes' : 'deleted-no'}">${job.deleted ? 'Yes' : 'No'}</span></td>
+        </tr>
+      `;
+    }).join('');
+
+    // Remove flash after animation
+    setTimeout(() => {
+      document.querySelectorAll('.flash').forEach(el => el.classList.remove('flash'));
+    }, 1000);
+
+    previousJobs = newJobs;
+    if (loader) {
+      loader.style.display = 'none';
+    }
+  }
+
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(`${protocol}//${window.location.host}/ws/admin`);
+
+  ws.onmessage = function(event) {
+    const jobs = JSON.parse(event.data);
+    updateJobs(jobs);
+  };
+
+  ws.onopen = function() {
+    console.log('Connected to admin WS');
+  };
+
+  ws.onclose = function() {
+    console.log('Disconnected from admin WS');
+  };
+
+  ws.onerror = function(error) {
+    console.error('WS error:', error);
+  };
+})();
+</script>
+{% endblock %}

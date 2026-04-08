@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}DocUnlock — Processing{% endblock %}
+
+{% block content %}
+<div class="page-job" id="jobPage" data-job-id="{{ job_id }}">
+
+  <!-- QUEUED STATE -->
+  <div class="job-state" id="stateQueued" style="display:none">
+    <div class="state-icon state-icon--spin">⏳</div>
+    <h2 class="state-title">In Queue</h2>
+    <p class="state-sub">Your job is <strong>position <span id="queuePos">—</span></strong> in the queue.</p>
+    <div class="progress-track">
+      <div class="progress-bar-custom" id="queueBar"></div>
+    </div>
+    <p class="state-hint">Hang tight — we process jobs one at a time to keep things fair.</p>
+  </div>
+
+  <!-- PROCESSING STATE -->
+  <div class="job-state" id="stateProcessing" style="display:none">
+    <div class="state-icon">
+      <div class="spinner-ring"></div>
+    </div>
+    <h2 class="state-title">Unlocking your PDF…</h2>
+    <p class="state-sub">We're removing the password protection right now.</p>
+    <div class="progress-track">
+      <div class="progress-bar-custom progress-bar-custom--indeterminate"></div>
+    </div>
+  </div>
+
+  <!-- DONE STATE -->
+  <div class="job-state" id="stateDone" style="display:none">
+    <div class="state-icon state-icon--done">✓</div>
+    <h2 class="state-title">Done! 🎉</h2>
+    <p class="state-sub">Your PDF has been unlocked and is ready to download.</p>
+
+    <a href="#" class="btn-download" id="downloadBtn">
+      <span>⬇</span> Download Unlocked PDF
+    </a>
+
+    <div class="notice-bar notice-bar--urgent mt-4">
+      <span class="notice-icon">⏰</span>
+      <span>Both files will be <strong>deleted from our server within 15 minutes</strong>. Download now!</span>
+    </div>
+
+    <p class="back-link"><a href="/">← Unlock another PDF</a></p>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div class="job-state" id="stateError" style="display:none">
+    <div class="state-icon state-icon--error">✕</div>
+    <h2 class="state-title">Something went wrong</h2>
+    <p class="state-sub" id="errorDetail">Could not process the PDF.</p>
+    <p class="back-link"><a href="/">← Try again</a></p>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/job.js"></script>
+{% endblock %}

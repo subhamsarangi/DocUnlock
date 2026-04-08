@@ -1,0 +1,9 @@
+venv/
+meta/
+*.pyc
+__pycache__/
+.env
+.admin_path
+uploads/
+jobs.db
+*.db
