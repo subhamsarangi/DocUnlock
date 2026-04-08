@@ -55,7 +55,7 @@ After=network.target
 User=ubuntu
 WorkingDirectory=/home/ubuntu/DocUnlock
 ExecStart=/home/ubuntu/DocUnlock/venv/bin/uvicorn main:app \
-  --host 127.0.0.1 --port 8008 --workers 1 \
+  --host 0.0.0.0 --port 8008 --workers 1 \
   --limit-concurrency 20 --backlog 32
 Restart=always
 RestartSec=5
@@ -75,56 +75,29 @@ sudo systemctl status docunlock
 
 ## Network Setup
 
-Open port 8000 in the security list:
+Open port 8008, 80 and 443 in the security list of yout server:
 
 1. Console → Networking → Virtual Cloud Networks → your VCN → Security Lists
-2. Add Ingress Rule: Protocol TCP, Destination Port 8000
+2. Add Ingress Rule: Protocol TCP, Destination Port 8008
 3. Restrict source CIDR to a particular's IP range, or leave open (0.0.0.0/0) and rely solely on the bearer token.
+
+DO the same for 80 and 443.
 
 Also open the port in the instance firewall:
 
 ```bash
 sudo iptables -I INPUT -p tcp --dport 8008 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 443 -j ACCEPT
 sudo netfilter-persistent save
 ```
 
+**Accessibility**: The app will be accessible at `http://your-server-ip:8008`
 
-**Note**: The systemd service binds to 127.0.0.1 (localhost) for security, so it's only accessible via Nginx reverse proxy or direct localhost access on the server.
-
-## Nginx reverse proxy (recommended)
-
-```nginx
-server {
-    listen 80;
-    server_name yourdomain.com;
-
-    client_max_body_size 55M;
-
-    location / {
-        proxy_pass http://127.0.0.1:8008;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_read_timeout 120s;
-    }
-}
-```
-
-Use certbot for HTTPS.
-
-**Accessibility**: With Nginx, the site is accessible at `http://yourdomain.com` (or `https://` after certbot).
 
 ## Updating Code
 
-When you update the code locally:
-
-1. Commit and push changes to Git:
-   ```bash
-   git add .
-   git commit -m "Update message"
-   git push origin main
-   ```
-
-2. On the server, pull changes and restart the service:
+On the server, pull changes and restart the service:
    ```bash
    cd /home/ubuntu/DocUnlock
    git pull origin main
@@ -166,3 +139,115 @@ When you update the code locally:
 - Files auto-deleted after 15 minutes.
 - PDF authenticity checked by file header (first 4 bytes = `%PDF`), not extension.
 - Max file size: 50 MB.
+
+## Nginx Reverse Proxy Setup and Certbot
+
+
+### 1. Install Nginx + Certbot
+
+```bash
+sudo apt update
+sudo apt install nginx certbot python3-certbot-nginx -y
+```
+
+---
+
+### 2. Allow HTTP/HTTPS in firewall (if needed)
+
+```bash
+sudo ufw allow 'Nginx Full'
+```
+
+---
+
+### 3. Create Nginx config
+
+```bash
+sudo nano /etc/nginx/sites-available/docunlock
+```
+
+Paste:
+
+```nginx
+server {
+    listen 80;
+    server_name your_domain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:8008;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+---
+
+### 4. Enable config
+
+```bash
+sudo ln -s /etc/nginx/sites-available/docunlock /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+---
+
+###  Test
+
+Open your site using the domain or the ip. no port needed.
+
+If this works → proceed.
+
+---
+
+###  5. IMPORTANT: You need a DOMAIN (not IP)
+
+👉 **Let’s Encrypt does NOT issue SSL certs for raw IPs**
+
+You must have something like:
+
+```
+docunlock.yourdomain.com
+```
+
+---
+
+### 6. Point domain to your server
+
+In your domain provider:
+
+* Add **A record**:
+
+```
+docunlock → your ip address
+```
+
+Wait 2–5 mins.
+
+---
+
+### 7. Run Certbot
+
+```bash
+sudo certbot --nginx -d docunlock.yourdomain.com
+```
+
+Follow prompts.
+
+---
+
+### 8. Done 🎉
+
+Now open:
+
+```
+https://docunlock.yourdomain.com
+```
+
+---
